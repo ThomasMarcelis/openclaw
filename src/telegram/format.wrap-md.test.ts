@@ -336,6 +336,27 @@ describe("edge cases", () => {
     expect(result).not.toContain("</code></code>");
   });
 
+  it("does not wrap orphaned TLD inside anchor link text", () => {
+    // R&D.md inside anchor text should NOT have D.md wrapped
+    const input = '<a href="https://example.com">R&D.md</a>';
+    const result = wrapFileReferencesInHtml(input);
+    expect(result).toBe(input);
+    expect(result).not.toContain("<code>D.md</code>");
+  });
+
+  it("handles malformed HTML with stray closing tags (negative depth)", () => {
+    // Stray </code> before content shouldn't break protection logic
+    // (depth should clamp at 0, not go negative)
+    const input = "</code>README.md<code>inside</code> after.md";
+    const result = wrapFileReferencesInHtml(input);
+    // README.md should be wrapped (codeDepth = 0 after clamping stray close)
+    expect(result).toContain("<code>README.md</code>");
+    // after.md should be wrapped (codeDepth = 0 after proper close)
+    expect(result).toContain("<code>after.md</code>");
+    // Should not have nested code tags
+    expect(result).not.toContain("<code><code>");
+  });
+
   it("does not wrap orphaned TLD inside href attributes", () => {
     // D.md inside href should NOT be wrapped
     const input = '<a href="http://example.com/R&D.md">link</a>';

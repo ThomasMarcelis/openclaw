@@ -187,13 +187,13 @@ export function wrapFileReferencesInHtml(html: string): string {
       return `${prefix}<code>${escapeHtml(filename)}</code>`;
     });
 
-    // Update tag depth
+    // Update tag depth (clamp at 0 for malformed HTML with stray closing tags)
     if (tagName === "code") {
-      codeDepth += isClosing ? -1 : 1;
+      codeDepth = isClosing ? Math.max(0, codeDepth - 1) : codeDepth + 1;
     } else if (tagName === "pre") {
-      preDepth += isClosing ? -1 : 1;
+      preDepth = isClosing ? Math.max(0, preDepth - 1) : preDepth + 1;
     } else if (tagName === "a") {
-      anchorDepth += isClosing ? -1 : 1;
+      anchorDepth = isClosing ? Math.max(0, anchorDepth - 1) : anchorDepth + 1;
     }
 
     // Add the tag itself
@@ -236,14 +236,16 @@ export function wrapFileReferencesInHtml(html: string): string {
     if (lastOpen > lastClose) {
       return m; // Inside a tag attribute
     }
-    // Skip if inside code/pre tags (count opens vs closes before offset)
+    // Skip if inside code/pre/anchor tags (count opens vs closes before offset)
     const textBefore = snapshot.slice(0, offset);
     const codeOpens = (textBefore.match(/<code/gi) || []).length;
     const codeCloses = (textBefore.match(/<\/code/gi) || []).length;
     const preOpens = (textBefore.match(/<pre/gi) || []).length;
     const preCloses = (textBefore.match(/<\/pre/gi) || []).length;
-    if (codeOpens > codeCloses || preOpens > preCloses) {
-      return m; // Inside code/pre content
+    const anchorOpens = (textBefore.match(/<a[\s>]/gi) || []).length;
+    const anchorCloses = (textBefore.match(/<\/a/gi) || []).length;
+    if (codeOpens > codeCloses || preOpens > preCloses || anchorOpens > anchorCloses) {
+      return m; // Inside code/pre/anchor content
     }
     return `${prefix}<code>${escapeHtml(tld)}</code>`;
   });
