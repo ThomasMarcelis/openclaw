@@ -13,6 +13,7 @@ export type AuthChoiceGroupId =
   | "google"
   | "copilot"
   | "openrouter"
+  | "litellm"
   | "ai-gateway"
   | "cloudflare-ai-gateway"
   | "moonshot"
@@ -142,6 +143,12 @@ const AUTH_CHOICE_GROUP_DEFS: {
     label: "Venice AI",
     hint: "Privacy-focused (uncensored models)",
     choices: ["venice-api-key"],
+  },
+  {
+    value: "litellm",
+    label: "LiteLLM",
+    hint: "Unified LLM gateway (100+ providers)",
+    choices: ["litellm-api-key"],
   },
   {
     value: "cloudflare-ai-gateway",
