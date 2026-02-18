@@ -63,8 +63,12 @@ export async function fetchBlueBubblesHistory(
   for (const path of possiblePaths) {
     try {
       const url = buildBlueBubblesApiUrl({ baseUrl, path, password });
-      const res = await blueBubblesFetchWithTimeout(url, { method: "GET" }, opts.timeoutMs ?? 10000);
-      
+      const res = await blueBubblesFetchWithTimeout(
+        url,
+        { method: "GET" },
+        opts.timeoutMs ?? 10000,
+      );
+
       if (!res.ok) {
         continue; // Try next path
       }
@@ -87,10 +91,10 @@ export async function fetchBlueBubblesHistory(
       }
 
       const historyEntries: BlueBubblesHistoryEntry[] = [];
-      
+
       for (const item of messages) {
         const msg = item as BlueBubblesMessageData;
-        
+
         // Skip messages without text content
         const text = msg.text?.trim();
         if (!text) {
@@ -102,7 +106,8 @@ export async function fetchBlueBubblesHistory(
           continue;
         }
 
-        const sender = msg.sender?.display_name || msg.sender?.address || msg.handle_id || "Unknown";
+        const sender =
+          msg.sender?.display_name || msg.sender?.address || msg.handle_id || "Unknown";
         const timestamp = msg.date_created || msg.date_delivered;
 
         historyEntries.push({
