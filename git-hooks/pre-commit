@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 RUN_NODE_TOOL="$ROOT_DIR/scripts/pre-commit/run-node-tool.sh"
 FILTER_FILES="$ROOT_DIR/scripts/pre-commit/filter-staged-files.mjs"
+CHECK_SENSITIVE="$ROOT_DIR/scripts/pre-commit/check-sensitive-content.mjs"
 
 if [[ ! -x "$RUN_NODE_TOOL" ]]; then
   echo "Missing helper: $RUN_NODE_TOOL" >&2
@@ -13,6 +14,11 @@ fi
 
 if [[ ! -f "$FILTER_FILES" ]]; then
   echo "Missing helper: $FILTER_FILES" >&2
+  exit 1
+fi
+
+if [[ ! -f "$CHECK_SENSITIVE" ]]; then
+  echo "Missing helper: $CHECK_SENSITIVE" >&2
   exit 1
 fi
 
@@ -27,6 +33,8 @@ done < <(git diff --cached --name-only --diff-filter=ACMR -z)
 if [ "${#files[@]}" -eq 0 ]; then
   exit 0
 fi
+
+node "$CHECK_SENSITIVE" --staged "${files[@]}"
 
 lint_files=()
 while IFS= read -r -d '' file; do

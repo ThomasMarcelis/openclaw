@@ -324,11 +324,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: false
+          fetch-depth: 2
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
       - name: Install detect-secrets
         run: |
@@ -341,6 +347,15 @@ jobs:
             echo "::error::Secret scanning failed. See docs/gateway/security.md#secret-scanning-detect-secrets"
             exit 1
           fi
+
+      - name: Block private IPs + gateway secrets in changed files
+        run: |
+          mapfile -t changed_files < <(git diff-tree --no-commit-id --name-only -r HEAD)
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            echo "No changed files to scan."
+            exit 0
+          fi
+          node scripts/pre-commit/check-sensitive-content.mjs "${changed_files[@]}"
 
   checks-windows:
     needs: [docs-scope, changed-scope, build-artifacts, check]
