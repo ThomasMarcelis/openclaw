@@ -96,5 +96,3 @@ export function formatPercent(value: number | null | undefined, fallback = "—"
   }
   return `${(value * 100).toFixed(1)}%`;
 }
-
-export { maskPhoneNumbers } from "./redact.ts";
