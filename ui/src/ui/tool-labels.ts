@@ -3,7 +3,7 @@
  * Unknown tools are title-cased with underscores replaced by spaces.
  */
 
-const TOOL_LABELS: Record<string, string> = {
+export const TOOL_LABELS: Record<string, string> = {
   exec: "Run Command",
   bash: "Run Command",
   read: "Read File",

@@ -97,8 +97,4 @@ export function formatPercent(value: number | null | undefined, fallback = "—"
   return `${(value * 100).toFixed(1)}%`;
 }
 
-const PHONE_RE = /(\+?\d[\d\s\-().]{6,}\d)/g;
-
-export function maskPhoneNumbers(text: string): string {
-  return text.replace(PHONE_RE, "•••-••••-••••");
-}
+export { maskPhoneNumbers } from "./redact.ts";

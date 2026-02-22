@@ -12,6 +12,15 @@ const HEALTH_FALLBACK: HealthSummary = {
   sessions: { path: "", count: 0, recent: [] },
 };
 
+/** State slice consumed by {@link loadHealthState}. Follows the agents/sessions convention. */
+export type HealthState = {
+  client: GatewayBrowserClient | null;
+  connected: boolean;
+  healthLoading: boolean;
+  healthResult: HealthSummary | null;
+  healthError: string | null;
+};
+
 /**
  * Fetch the gateway health summary.
  *
@@ -25,5 +34,29 @@ export async function loadHealth(client: GatewayBrowserClient): Promise<HealthSu
     return result ?? HEALTH_FALLBACK;
   } catch {
     return HEALTH_FALLBACK;
+  }
+}
+
+/**
+ * State-mutating health loader (same pattern as {@link import("./agents.ts").loadAgents}).
+ *
+ * Populates `healthResult` / `healthError` on the provided state slice and
+ * toggles `healthLoading` around the request.
+ */
+export async function loadHealthState(state: HealthState): Promise<void> {
+  if (!state.client || !state.connected) {
+    return;
+  }
+  if (state.healthLoading) {
+    return;
+  }
+  state.healthLoading = true;
+  state.healthError = null;
+  try {
+    state.healthResult = await loadHealth(state.client);
+  } catch (err) {
+    state.healthError = String(err);
+  } finally {
+    state.healthLoading = false;
   }
 }
