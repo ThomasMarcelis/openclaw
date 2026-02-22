@@ -34,13 +34,50 @@ const resolveCommit = () => {
   }
 };
 
+function parseGitHubRepo(remoteUrl: string): string | null {
+  const trimmed = remoteUrl.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const match = trimmed.match(/github\.com[:/](?<owner>[^/]+)\/(?<repo>[^/]+?)(?:\.git)?$/i);
+  if (!match?.groups?.owner || !match?.groups?.repo) {
+    return null;
+  }
+  const owner = match.groups.owner.trim();
+  const repo = match.groups.repo.trim().replace(/\.git$/i, "");
+  if (!owner || !repo) {
+    return null;
+  }
+  return `${owner}/${repo}`;
+}
+
+const resolveSourceRepo = () => {
+  const envRepo = process.env.OPENCLAW_SOURCE_REPO?.trim() || process.env.GITHUB_REPOSITORY?.trim();
+  if (envRepo) {
+    return envRepo;
+  }
+  try {
+    const origin = execSync("git remote get-url origin", {
+      cwd: rootDir,
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
+    return parseGitHubRepo(origin);
+  } catch {
+    return null;
+  }
+};
+
 const version = readPackageVersion();
 const commit = resolveCommit();
+const sourceRepo = resolveSourceRepo();
 
 const buildInfo = {
   version,
   commit,
   builtAt: new Date().toISOString(),
+  sourceRepo,
 };
 
 fs.mkdirSync(distDir, { recursive: true });
