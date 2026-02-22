@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
+import YAML from "yaml";
 import { resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";
@@ -200,9 +201,9 @@ export class QmdMemoryManager implements MemorySearchManager {
     this.env = {
       ...process.env,
       XDG_CONFIG_HOME: this.xdgConfigHome,
-      // workaround for upstream bug https://github.com/tobi/qmd/issues/132
-      // QMD doesn't respect XDG_CONFIG_HOME:
-      QMD_CONFIG_DIR: this.xdgConfigHome,
+      // Work around upstream bug https://github.com/tobi/qmd/issues/132.
+      // QMD expects the concrete config dir, not the XDG root.
+      QMD_CONFIG_DIR: path.join(this.xdgConfigHome, "qmd"),
       XDG_CACHE_HOME: this.xdgCacheHome,
       NO_COLOR: "1",
     };
@@ -333,6 +334,7 @@ export class QmdMemoryManager implements MemorySearchManager {
 
   private async listCollectionsBestEffort(): Promise<Map<string, ListedCollection>> {
     const existing = new Map<string, ListedCollection>();
+    let listedViaCli = false;
     try {
       const result = await this.runQmd(["collection", "list", "--json"], {
         timeoutMs: this.qmd.update.commandTimeoutMs,
@@ -341,8 +343,67 @@ export class QmdMemoryManager implements MemorySearchManager {
       for (const [name, details] of parsed) {
         existing.set(name, details);
       }
+      listedViaCli = true;
     } catch {
       // ignore; older qmd versions might not support list --json.
+    }
+
+    const needsYaml =
+      !listedViaCli || Array.from(existing.values()).some((collection) => !collection.path);
+    if (needsYaml) {
+      const yamlCollections = await this.listCollectionsFromYaml();
+      for (const [name, details] of yamlCollections) {
+        const current = existing.get(name);
+        if (!current) {
+          existing.set(name, details);
+          continue;
+        }
+        existing.set(name, {
+          path: current.path ?? details.path,
+          pattern: current.pattern ?? details.pattern,
+        });
+      }
+    }
+    return existing;
+  }
+
+  private async listCollectionsFromYaml(): Promise<Map<string, ListedCollection>> {
+    const existing = new Map<string, ListedCollection>();
+    const indexPath = path.join(this.xdgConfigHome, "qmd", "index.yml");
+    try {
+      const raw = await fs.readFile(indexPath, "utf-8");
+      const parsed = YAML.parse(raw, { schema: "core" }) as unknown;
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return existing;
+      }
+      const collections = (parsed as { collections?: unknown }).collections;
+      if (!collections || typeof collections !== "object" || Array.isArray(collections)) {
+        return existing;
+      }
+      for (const [rawName, entry] of Object.entries(collections as Record<string, unknown>)) {
+        const name = rawName.trim();
+        if (!name) {
+          continue;
+        }
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+          existing.set(name, {});
+          continue;
+        }
+        const obj = entry as { path?: unknown; pattern?: unknown; mask?: unknown };
+        const listedPath = typeof obj.path === "string" ? obj.path : undefined;
+        const listedPattern =
+          typeof obj.pattern === "string"
+            ? obj.pattern
+            : typeof obj.mask === "string"
+              ? obj.mask
+              : undefined;
+        existing.set(name, { path: listedPath, pattern: listedPattern });
+      }
+    } catch (err) {
+      if (!isFileMissingError(err)) {
+        const message = err instanceof Error ? err.message : String(err);
+        log.warn(`qmd collection yaml read failed: ${message}`);
+      }
     }
     return existing;
   }

@@ -431,6 +431,98 @@ describe("QmdMemoryManager", () => {
     expect(addCalls).toHaveLength(0);
   });
 
+  it("rebinds managed collections to the current workspace using yaml metadata", async () => {
+    cfg = {
+      ...cfg,
+      memory: {
+        backend: "qmd",
+        qmd: {
+          includeDefaultMemory: true,
+          update: { interval: "0s", debounceMs: 60_000, onBoot: false },
+          paths: [{ path: "knowledge", pattern: "**/*.md", name: "knowledge" }],
+        },
+      },
+    } as OpenClawConfig;
+
+    const staleWorkspaceDir = path.join(tmpRoot, "stale-workspace");
+    await fs.mkdir(path.join(staleWorkspaceDir, "memory"), { recursive: true });
+    await fs.mkdir(path.join(staleWorkspaceDir, "knowledge"), { recursive: true });
+    const qmdConfigDir = path.join(stateDir, "agents", agentId, "qmd", "xdg-config", "qmd");
+    await fs.mkdir(qmdConfigDir, { recursive: true });
+    await fs.writeFile(
+      path.join(qmdConfigDir, "index.yml"),
+      [
+        "collections:",
+        "  memory-root-main:",
+        `    path: ${staleWorkspaceDir}`,
+        "    pattern: MEMORY.md",
+        "  memory-alt-main:",
+        `    path: ${staleWorkspaceDir}`,
+        "    pattern: memory.md",
+        "  memory-dir-main:",
+        `    path: ${path.join(staleWorkspaceDir, "memory")}`,
+        '    pattern: "**/*.md"',
+        "  knowledge-main:",
+        `    path: ${path.join(staleWorkspaceDir, "knowledge")}`,
+        '    pattern: "**/*.md"',
+        "",
+      ].join("\n"),
+      "utf-8",
+    );
+
+    const removeCalls: string[] = [];
+    const addCalls: Array<{ name: string; path: string; mask: string }> = [];
+    spawnMock.mockImplementation((_cmd: string, args: string[]) => {
+      if (args[0] === "collection" && args[1] === "list") {
+        const child = createMockChild({ autoClose: false });
+        emitAndClose(
+          child,
+          "stdout",
+          JSON.stringify([
+            "memory-root-main",
+            "memory-alt-main",
+            "memory-dir-main",
+            "knowledge-main",
+          ]),
+        );
+        return child;
+      }
+      if (args[0] === "collection" && args[1] === "remove") {
+        const child = createMockChild({ autoClose: false });
+        removeCalls.push(args[2] ?? "");
+        queueMicrotask(() => child.closeWith(0));
+        return child;
+      }
+      if (args[0] === "collection" && args[1] === "add") {
+        const child = createMockChild({ autoClose: false });
+        addCalls.push({
+          path: args[2] ?? "",
+          name: args[args.indexOf("--name") + 1] ?? "",
+          mask: args[args.indexOf("--mask") + 1] ?? "",
+        });
+        queueMicrotask(() => child.closeWith(0));
+        return child;
+      }
+      return createMockChild();
+    });
+
+    const { manager } = await createManager({ mode: "full" });
+    await manager.close();
+
+    expect(removeCalls).toEqual([
+      "memory-root-main",
+      "memory-alt-main",
+      "memory-dir-main",
+      "knowledge-main",
+    ]);
+    expect(addCalls).toEqual([
+      { name: "memory-root-main", path: workspaceDir, mask: "MEMORY.md" },
+      { name: "memory-alt-main", path: workspaceDir, mask: "memory.md" },
+      { name: "memory-dir-main", path: path.join(workspaceDir, "memory"), mask: "**/*.md" },
+      { name: "knowledge-main", path: path.join(workspaceDir, "knowledge"), mask: "**/*.md" },
+    ]);
+  });
+
   it("migrates unscoped legacy collections before adding scoped names", async () => {
     cfg = {
       ...cfg,
@@ -1765,6 +1857,7 @@ describe("QmdMemoryManager", () => {
     const normalizePath = (value?: string) => value?.replace(/\\/g, "/");
     expect(normalizePath(spawnOpts?.env?.XDG_CONFIG_HOME)).toContain("/agents/main/qmd/xdg-config");
     expect(normalizePath(spawnOpts?.env?.XDG_CACHE_HOME)).toContain("/agents/main/qmd/xdg-cache");
+    expect(normalizePath(spawnOpts?.env?.QMD_CONFIG_DIR)).toContain("/agents/main/qmd/xdg-config/qmd");
 
     await manager.close();
   });
