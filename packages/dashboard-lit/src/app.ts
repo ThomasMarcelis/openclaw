@@ -11,6 +11,8 @@ import {
 } from "./lib/navigation.js";
 import "./components/gateway-provider.js";
 import "./components/sidebar-nav.js";
+import "./components/agent-profile-provider.js";
+import "./components/agent-panel.js";
 import "./views/overview-view.js";
 import "./views/chat-view.js";
 import "./views/placeholder-view.js";
@@ -193,7 +195,7 @@ export class DashboardApp extends LitElement {
         `;
       case "chat":
         return html`
-          <chat-view></chat-view>
+          <agent-panel mode="fullpage"></agent-panel>
         `;
       default:
         return html`<placeholder-view .tab=${this.tab}></placeholder-view>`;
@@ -206,6 +208,7 @@ export class DashboardApp extends LitElement {
     const isChat = this.tab === "chat";
 
     return html`
+      <agent-profile-provider>
       <gateway-provider>
         <div class="shell ${this.navCollapsed ? "shell--nav-collapsed" : ""} ${isChat ? "shell--chat" : ""}">
 
@@ -263,6 +266,7 @@ export class DashboardApp extends LitElement {
           </main>
         </div>
       </gateway-provider>
+      </agent-profile-provider>
     `;
   }
 }

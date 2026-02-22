@@ -37,7 +37,22 @@ export type IconName =
   | "terminal"
   | "copy"
   | "chevronUp"
-  | "paperclip";
+  | "paperclip"
+  | "bot"
+  | "search"
+  | "plus"
+  | "check"
+  | "pin"
+  | "pinOff"
+  | "download"
+  | "edit"
+  | "mic"
+  | "micOff"
+  | "x"
+  | "arrowDown"
+  | "bookmark"
+  | "hammer"
+  | "listChecks";
 
 type IconOptions = {
   className?: string;
@@ -306,6 +321,114 @@ const ICONS: Record<IconName, (opts?: IconOptions) => TemplateResult> = {
   paperclip: (opts) =>
     wrap(
       svg`<path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke-linecap="round" stroke-linejoin="round"/>`,
+      opts,
+    ),
+  bot: (opts) =>
+    wrap(
+      svg`
+        <path d="M12 8V4H8" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="4" y="8" width="16" height="12" rx="2"/>
+        <path d="M2 14h2M20 14h2" stroke-linecap="round"/>
+        <circle cx="9" cy="13" r="1" fill="currentColor" stroke="none"/>
+        <circle cx="15" cy="13" r="1" fill="currentColor" stroke="none"/>
+      `,
+      opts,
+    ),
+  search: (opts) =>
+    wrap(
+      svg`
+        <circle cx="11" cy="11" r="8"/>
+        <path d="M21 21l-4.35-4.35" stroke-linecap="round"/>
+      `,
+      opts,
+    ),
+  plus: (opts) => wrap(svg`<path d="M12 5v14M5 12h14" stroke-linecap="round"/>`, opts),
+  check: (opts) =>
+    wrap(svg`<path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>`, opts),
+  pin: (opts) =>
+    wrap(
+      svg`
+        <path d="M12 17v5" stroke-linecap="round"/>
+        <path d="M5 17h14" stroke-linecap="round"/>
+        <path d="M15 3.5L9 9l-1.5 6L14 11.5l5.5-2.5L15 3.5z" stroke-linejoin="round"/>
+      `,
+      opts,
+    ),
+  pinOff: (opts) =>
+    wrap(
+      svg`
+        <path d="M12 17v5" stroke-linecap="round"/>
+        <path d="M5 17h14" stroke-linecap="round"/>
+        <path d="M15 3.5L9 9l-1.5 6L14 11.5l5.5-2.5L15 3.5z" stroke-linejoin="round"/>
+        <path d="M2 2l20 20" stroke-linecap="round"/>
+      `,
+      opts,
+    ),
+  download: (opts) =>
+    wrap(
+      svg`
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7 10l5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 15V3" stroke-linecap="round"/>
+      `,
+      opts,
+    ),
+  edit: (opts) =>
+    wrap(
+      svg`
+        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke-linejoin="round"/>
+      `,
+      opts,
+    ),
+  mic: (opts) =>
+    wrap(
+      svg`
+        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+        <path d="M19 10v2a7 7 0 01-14 0v-2" stroke-linecap="round"/>
+        <path d="M12 19v4M8 23h8" stroke-linecap="round"/>
+      `,
+      opts,
+    ),
+  micOff: (opts) =>
+    wrap(
+      svg`
+        <path d="M1 1l22 22" stroke-linecap="round"/>
+        <path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6" stroke-linecap="round"/>
+        <path d="M17 16.95A7 7 0 015 12v-2m14 0v2c0 .87-.16 1.71-.46 2.49" stroke-linecap="round"/>
+        <path d="M12 19v4M8 23h8" stroke-linecap="round"/>
+      `,
+      opts,
+    ),
+  x: (opts) => wrap(svg`<path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/>`, opts),
+  arrowDown: (opts) =>
+    wrap(
+      svg`
+        <path d="M12 5v14" stroke-linecap="round"/>
+        <path d="M19 12l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"/>
+      `,
+      opts,
+    ),
+  bookmark: (opts) =>
+    wrap(
+      svg`<path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke-linejoin="round"/>`,
+      opts,
+    ),
+  hammer: (opts) =>
+    wrap(
+      svg`
+        <path d="M15 12l-8.5 8.5a2.12 2.12 0 01-3-3L12 9" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M17.64 2.36a2.12 2.12 0 013 3L14 12l-3-3 6.64-6.64z" stroke-linejoin="round"/>
+      `,
+      opts,
+    ),
+  listChecks: (opts) =>
+    wrap(
+      svg`
+        <path d="M10 6h11M10 12h11M10 18h11" stroke-linecap="round"/>
+        <path d="M3 6l2 2 4-4M3 18l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3 12h4" stroke-linecap="round"/>
+      `,
       opts,
     ),
 };

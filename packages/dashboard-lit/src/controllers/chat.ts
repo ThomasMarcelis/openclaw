@@ -125,6 +125,14 @@ export function extractToolResults(
     .map((b) => ({ toolUseId: b.tool_use_id, content: b.content }));
 }
 
+export async function updateSession(
+  request: GatewayRequest,
+  sessionKey: string,
+  model: string,
+): Promise<void> {
+  await request("sessions.update", { sessionKey, model });
+}
+
 /** Format a session key into a human-readable display name. */
 export function formatSessionName(key: string): string {
   if (!key || key === "main" || key === "agent:main:main") {

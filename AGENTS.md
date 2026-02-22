@@ -118,6 +118,7 @@
 
 ## Security & Configuration Tips
 
+- When viewing the internals of an `openclaw.json` file in chat, simply state `REDACTED_OPENCLAW_JSON` instead of displaying its contents.
 - Web provider stores creds at `~/.openclaw/credentials/`; rerun `openclaw login` if logged out.
 - Pi sessions live under `~/.openclaw/sessions/` by default; the base directory is not configurable.
 - Environment variables: see `~/.profile`.

@@ -66,6 +66,7 @@ export class OverviewView extends LitElement {
   @state() presenceEntries: PresenceEntry[] = [];
   @state() sessionsResult: SessionsListResult | null = null;
   @state() cronStatus: CronStatus | null = null;
+  @state() channelsLastRefresh: number | null = null;
   @state() loadingStats = false;
   @state() lastRefreshedAt: number | null = null;
   @state() showSnapshot = false;
@@ -92,14 +93,18 @@ export class OverviewView extends LitElement {
     }
     this.loadingStats = true;
     try {
-      const [presence, sessions, cron] = await Promise.allSettled([
+      const [presence, sessions, cron, channels] = await Promise.allSettled([
         loadPresence(this.gateway.request),
         loadSessions(this.gateway.request, { limit: 20, includeDerivedTitles: true }),
         this.gateway.request<CronStatus>("cron.status", {}),
+        this.gateway.request("channels.status", { probe: false }),
       ]);
       this.presenceEntries = presence.status === "fulfilled" ? presence.value : [];
       this.sessionsResult = sessions.status === "fulfilled" ? sessions.value : null;
       this.cronStatus = cron.status === "fulfilled" && cron.value ? cron.value : null;
+      if (channels.status === "fulfilled") {
+        this.channelsLastRefresh = Date.now();
+      }
       this.lastRefreshedAt = Date.now();
     } finally {
       this.loadingStats = false;
@@ -144,6 +149,7 @@ export class OverviewView extends LitElement {
         ${this.renderStatsSection()}
         ${this.renderSessionsSection()}
         ${connected ? nothing : this.renderConnectionSection(g)}
+        ${this.renderNotesSection()}
         ${this.renderDebugSections(g)}
       </div>
     `;
@@ -193,6 +199,15 @@ export class OverviewView extends LitElement {
             </div>
             <div class="stat-value">${snapshot.authMode ?? "—"}</div>
           </div>
+          <div class="stat-card">
+            <div class="stat-label">
+              ${icon("refresh", { className: "icon-xs" })}
+              Last Channels Refresh
+            </div>
+            <div class="stat-value">
+              ${this.channelsLastRefresh != null ? formatRelativeTime(this.channelsLastRefresh) : "—"}
+            </div>
+          </div>
         </div>
         ${
           snapshot.gatewayVersion
@@ -204,6 +219,10 @@ export class OverviewView extends LitElement {
             `
             : nothing
         }
+        <div class="overview-callout" style="margin-top: 10px;">
+          ${icon("link", { className: "icon-xs" })}
+          Use Channels to link WhatsApp, Telegram, Discord, Signal, or iMessage.
+        </div>
       </section>
     `;
   }
@@ -494,6 +513,48 @@ export class OverviewView extends LitElement {
               </button>
             </div>
           </label>
+        </div>
+      </section>
+    `;
+  }
+
+  /* ── Notes / Tips ─────────────────────────────── */
+
+  private renderNotesSection() {
+    return html`
+      <section class="panel overview-panel">
+        <h3 class="panel-title">
+          ${icon("book", { className: "icon-sm" })}
+          Tips
+        </h3>
+        <div class="overview-notes-grid">
+          <div class="overview-note">
+            <div class="overview-note__title">
+              ${icon("server", { className: "icon-xs" })}
+              Tailscale serve
+            </div>
+            <div class="muted">
+              Prefer serve mode to keep the gateway on loopback with tailnet auth.
+            </div>
+          </div>
+          <div class="overview-note">
+            <div class="overview-note__title">
+              ${icon("fileText", { className: "icon-xs" })}
+              Session hygiene
+            </div>
+            <div class="muted">
+              Use /new or sessions.patch to reset context.
+            </div>
+          </div>
+          <div class="overview-note">
+            <div class="overview-note__title">
+              ${icon("zap", { className: "icon-xs" })}
+              Cron reminders
+            </div>
+            <div class="muted">
+              Use isolated sessions for recurring runs.
+            </div>
+          </div>
         </div>
       </section>
     `;
