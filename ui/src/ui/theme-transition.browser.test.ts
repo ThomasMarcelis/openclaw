@@ -61,21 +61,8 @@ describe("theme transition regressions", () => {
     expect(root.style.getPropertyValue("--theme-switch-y")).toBe("");
   });
 
-  it("uses resolved system theme and skips transition when unchanged", () => {
-    vi.spyOn(window, "matchMedia").mockImplementation((query: string): MediaQueryList => {
-      return {
-        media: query,
-        matches: query === "(prefers-color-scheme: dark)",
-        onchange: null,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-        addListener: () => {},
-        removeListener: () => {},
-        dispatchEvent: () => true,
-      } as MediaQueryList;
-    });
-
-    const resolved = resolveTheme("system");
+  it("skips transition when current and next theme are the same", () => {
+    const resolved = resolveTheme("dark");
     expect(resolved).toBe("dark");
 
     const applyTheme = vi.fn();

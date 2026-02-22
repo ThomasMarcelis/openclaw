@@ -52,8 +52,6 @@ type SettingsHost = {
   agentsList?: AgentsListResult | null;
   agentsSelectedId?: string | null;
   agentsPanel?: "overview" | "files" | "tools" | "skills" | "channels" | "cron";
-  themeMedia: MediaQueryList | null;
-  themeMediaHandler: ((event: MediaQueryListEvent) => void) | null;
   pendingGatewayUrl?: string | null;
 };
 
@@ -260,7 +258,7 @@ export function inferBasePath() {
 }
 
 export function syncThemeWithSettings(host: SettingsHost) {
-  host.theme = host.settings.theme ?? "system";
+  host.theme = host.settings.theme ?? "dark";
   applyResolvedTheme(host, resolveTheme(host.theme));
 }
 
@@ -272,43 +270,6 @@ export function applyResolvedTheme(host: SettingsHost, resolved: ResolvedTheme) 
   const root = document.documentElement;
   root.dataset.theme = resolved;
   root.style.colorScheme = resolved;
-}
-
-export function attachThemeListener(host: SettingsHost) {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-    return;
-  }
-  host.themeMedia = window.matchMedia("(prefers-color-scheme: dark)");
-  host.themeMediaHandler = (event) => {
-    if (host.theme !== "system") {
-      return;
-    }
-    applyResolvedTheme(host, event.matches ? "dark" : "light");
-  };
-  if (typeof host.themeMedia.addEventListener === "function") {
-    host.themeMedia.addEventListener("change", host.themeMediaHandler);
-    return;
-  }
-  const legacy = host.themeMedia as MediaQueryList & {
-    addListener: (cb: (event: MediaQueryListEvent) => void) => void;
-  };
-  legacy.addListener(host.themeMediaHandler);
-}
-
-export function detachThemeListener(host: SettingsHost) {
-  if (!host.themeMedia || !host.themeMediaHandler) {
-    return;
-  }
-  if (typeof host.themeMedia.removeEventListener === "function") {
-    host.themeMedia.removeEventListener("change", host.themeMediaHandler);
-  } else {
-    const legacy = host.themeMedia as MediaQueryList & {
-      removeListener: (cb: (event: MediaQueryListEvent) => void) => void;
-    };
-    legacy.removeListener(host.themeMediaHandler);
-  }
-  host.themeMedia = null;
-  host.themeMediaHandler = null;
 }
 
 export function syncTabWithLocation(host: SettingsHost, replace: boolean) {

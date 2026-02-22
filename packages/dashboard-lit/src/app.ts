@@ -155,6 +155,18 @@ export class DashboardApp extends LitElement {
   private handleTabChange = (e: CustomEvent<Tab>): void => {
     this.setTab(e.detail);
     this.scrollToContent(true);
+
+    // Transfer focus to the main content area after navigation
+    requestAnimationFrame(() => {
+      const main = this.querySelector<HTMLElement>("main.content");
+      if (main) {
+        const target = main.querySelector<HTMLElement>("[autofocus], h3, section");
+        if (target) {
+          target.setAttribute("tabindex", "-1");
+          target.focus({ preventScroll: true });
+        }
+      }
+    });
   };
 
   /* ── Sidebar ─────────────────────────────────────── */

@@ -5738,3 +5738,316 @@ agent-chat {
   background: rgba(210, 153, 34, 0.14);
   color: var(--warn);
 }
+
+/* ─── Health Strip ─── */
+
+.health-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.health-strip__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid var(--lg-border-color);
+  background: var(--lg-bg-primary);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .health-strip__chip {
+    backdrop-filter: blur(var(--lg-blur-sm));
+    -webkit-backdrop-filter: blur(var(--lg-blur-sm));
+  }
+}
+
+.health-strip__chip--ok {
+  color: var(--success);
+  border-color: rgba(63, 185, 80, 0.24);
+}
+
+.health-strip__chip--error {
+  color: #f85149;
+  border-color: rgba(248, 81, 73, 0.24);
+}
+
+.health-strip__chip--stream {
+  color: var(--accent);
+  border-color: rgba(251, 136, 105, 0.24);
+}
+
+.health-strip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.health-strip__chip--ok .health-strip__dot {
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.health-strip__label {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ─── Log Panel (tabbed) ─── */
+
+.log-panel-container {
+  overflow: hidden;
+}
+
+.log-panel__tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--lg-border-subtle);
+  margin-bottom: 10px;
+}
+
+.log-panel__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color var(--lg-duration-fast) ease,
+    border-color var(--lg-duration-fast) ease;
+}
+
+.log-panel__tab:hover {
+  color: var(--text);
+}
+
+.log-panel__tab--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.log-panel__live-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse-badge 1.5s ease-in-out infinite;
+}
+
+.log-panel__body {
+  min-height: 80px;
+}
+
+.log-panel__pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px;
+  margin: 0;
+  border-radius: var(--lg-radius-sm);
+  background: var(--lg-bg-toolbar);
+  border: 1px solid var(--lg-border-subtle);
+}
+
+/* ─── Card Tiers ─── */
+
+.panel--operational {
+  border-color: var(--lg-border-subtle);
+  box-shadow: var(--lg-shadow-subtle);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .panel--operational {
+    backdrop-filter: blur(var(--lg-blur-sm)) saturate(1.2);
+    -webkit-backdrop-filter: blur(var(--lg-blur-sm)) saturate(1.2);
+  }
+}
+
+.panel--operational:hover {
+  box-shadow: var(--lg-shadow-elevated);
+}
+
+/* ─── Entrance Animations ─── */
+
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.overview-card-enter {
+  animation: card-rise 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.overview-grid > :nth-child(1) { animation-delay: 0ms; }
+.overview-grid > :nth-child(2) { animation-delay: 40ms; }
+.overview-grid > :nth-child(3) { animation-delay: 80ms; }
+.overview-grid > :nth-child(4) { animation-delay: 120ms; }
+.overview-grid > :nth-child(5) { animation-delay: 160ms; }
+.overview-grid > :nth-child(6) { animation-delay: 200ms; }
+.overview-grid > :nth-child(7) { animation-delay: 240ms; }
+.overview-grid > :nth-child(8) { animation-delay: 280ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .overview-card-enter {
+    animation: none;
+  }
+}
+
+/* ─── Quick Action Keyboard Hints ─── */
+
+.quick-action-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid var(--lg-border-color);
+  background: var(--lg-bg-toolbar);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-left: 2px;
+}
+
+/* ─── Extracted Inline Styles ─── */
+
+.overview-version-hint {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.overview-refresh-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.alert-card__retry {
+  margin-top: 8px;
+}
+
+.alert-card__docs {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.alert-card__docs a {
+  margin-left: 6px;
+}
+
+/* ─── Empty States ─── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+  border: 1px dashed var(--lg-border-subtle);
+  border-radius: var(--lg-radius-md);
+  margin-top: 8px;
+}
+
+.empty-state__icon {
+  opacity: 0.4;
+}
+
+.empty-state__action {
+  margin-top: 4px;
+  padding: 4px 12px;
+  border: 1px solid var(--lg-border-color);
+  border-radius: var(--lg-radius-sm);
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition:
+    background var(--lg-duration-fast) ease,
+    color var(--lg-duration-fast) ease;
+}
+
+.empty-state__action:hover {
+  background: var(--accent-soft);
+}
+
+/* ─── Light theme overrides for new components ─── */
+
+:root[data-theme="light"] .health-strip__chip {
+  border-color: rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+:root[data-theme="light"] .health-strip__chip--ok {
+  border-color: rgba(15, 123, 79, 0.2);
+}
+
+:root[data-theme="light"] .health-strip__chip--error {
+  border-color: rgba(248, 81, 73, 0.2);
+}
+
+:root[data-theme="light"] .log-panel__tab--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+:root[data-theme="light"] .log-panel__pre {
+  background: rgba(248, 249, 251, 0.95);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme="light"] .quick-action-kbd {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(248, 249, 251, 0.9);
+  color: var(--muted);
+}
+
+:root[data-theme="light"] .empty-state {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* ─── Landing theme overrides for new components ─── */
+
+:root[data-theme="landingTheme"] .health-strip__chip--ok {
+  border-color: rgba(52, 211, 153, 0.24);
+}
+
+:root[data-theme="landingTheme"] .log-panel__tab--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
