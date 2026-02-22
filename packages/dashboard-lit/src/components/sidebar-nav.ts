@@ -62,20 +62,14 @@ export class SidebarNav extends LitElement {
     return html`
       <aside class="sidebar ${this.collapsed ? "sidebar--collapsed" : ""}">
         <div class="sidebar-header">
-          <div class="sidebar-brand">
-            <div class="sidebar-brand__logo">
-              <img src=${faviconSrc} alt="OpenClaw" width="28" height="28" />
-            </div>
-            ${
-              !this.collapsed
-                ? html`
-                    <div class="sidebar-brand__text">
-                      <div class="sidebar-brand__title">OpenClaw</div>
-                    </div>
-                  `
-                : nothing
-            }
-          </div>
+          <img class="sidebar-logo" src=${faviconSrc} alt="OpenClaw" width="24" height="24" />
+          ${
+            !this.collapsed
+              ? html`
+                  <span class="sidebar-title">OpenClaw</span>
+                `
+              : nothing
+          }
           <button
             class="sidebar-collapse-btn"
             @click=${() => this.onToggleCollapse()}
