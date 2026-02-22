@@ -107,6 +107,34 @@ export const zh_CN: TranslationMap = {
       docsHint: "如需远程访问，建议使用 Tailscale Serve。",
       docsLink: "查看文档 →",
     },
+    cards: {
+      cost: "费用",
+      skills: "技能",
+      recentSessions: "最近会话",
+    },
+    attention: {
+      title: "注意事项",
+    },
+    eventLog: {
+      title: "事件日志",
+    },
+    logTail: {
+      title: "网关日志",
+    },
+    quickActions: {
+      newSession: "新建会话",
+      automation: "自动化",
+      refreshAll: "全部刷新",
+      terminal: "终端",
+    },
+    streamMode: {
+      active: "流模式 — 数据已隐藏",
+      disable: "禁用",
+    },
+    palette: {
+      placeholder: "输入命令…",
+      noResults: "无结果",
+    },
   },
   login: {
     subtitle: "网关仪表盘",

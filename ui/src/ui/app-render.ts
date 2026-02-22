@@ -55,8 +55,10 @@ import {
 import { icons } from "./icons.ts";
 import { normalizeBasePath, TAB_GROUPS, subtitleForTab, titleForTab } from "./navigation.ts";
 import { renderAgents } from "./views/agents.ts";
+import { renderBottomTabs } from "./views/bottom-tabs.ts";
 import { renderChannels } from "./views/channels.ts";
 import { renderChat } from "./views/chat.ts";
+import { renderCommandPalette } from "./views/command-palette.ts";
 import { renderConfig } from "./views/config.ts";
 import { renderCron } from "./views/cron.ts";
 import { renderDebug } from "./views/debug.ts";
@@ -118,6 +120,26 @@ export function renderApp(state: AppViewState) {
     null;
 
   return html`
+    ${renderCommandPalette({
+      open: state.paletteOpen,
+      query: (state as unknown as { paletteQuery?: string }).paletteQuery ?? "",
+      activeIndex: (state as unknown as { paletteActiveIndex?: number }).paletteActiveIndex ?? 0,
+      onToggle: () => {
+        state.paletteOpen = !state.paletteOpen;
+      },
+      onQueryChange: (q) => {
+        (state as unknown as { paletteQuery: string }).paletteQuery = q;
+      },
+      onActiveIndexChange: (i) => {
+        (state as unknown as { paletteActiveIndex: number }).paletteActiveIndex = i;
+      },
+      onNavigate: (tab) => {
+        state.setTab(tab as import("./navigation.ts").Tab);
+      },
+      onSlashCommand: (_cmd) => {
+        state.setTab("chat" as import("./navigation.ts").Tab);
+      },
+    })}
     <div class="shell ${isChat ? "shell--chat" : ""} ${chatFocus ? "shell--chat-focus" : ""} ${state.settings.navCollapsed ? "shell--nav-collapsed" : ""} ${state.onboarding ? "shell--onboarding" : ""}">
       <header class="topbar">
         <div class="topbar-left">
@@ -235,6 +257,15 @@ export function renderApp(state: AppViewState) {
                 cronEnabled: state.cronStatus?.enabled ?? null,
                 cronNext,
                 lastChannelsRefresh: state.channelsLastSuccess,
+                usageResult: state.usageResult,
+                sessionsResult: state.sessionsResult,
+                skillsReport: state.skillsReport,
+                cronJobs: state.cronJobs,
+                cronStatus: state.cronStatus,
+                attentionItems: state.attentionItems,
+                eventLog: state.eventLog,
+                overviewLogLines: state.overviewLogLines,
+                streamMode: state.streamMode,
                 onSettingsChange: (next) => state.applySettings(next),
                 onPasswordChange: (next) => (state.password = next),
                 onSessionKeyChange: (next) => {
@@ -250,6 +281,16 @@ export function renderApp(state: AppViewState) {
                 },
                 onConnect: () => state.connect(),
                 onRefresh: () => state.loadOverview(),
+                onNavigate: (tab) => state.setTab(tab as import("./navigation.ts").Tab),
+                onRefreshLogs: () => state.loadOverview(),
+                onToggleStreamMode: () => {
+                  state.streamMode = !state.streamMode;
+                  try {
+                    localStorage.setItem("openclaw:stream-mode", String(state.streamMode));
+                  } catch {
+                    /* */
+                  }
+                },
               })
             : nothing
         }
@@ -972,6 +1013,10 @@ export function renderApp(state: AppViewState) {
       </main>
       ${renderExecApprovalPrompt(state)}
       ${renderGatewayUrlConfirmation(state)}
+      ${renderBottomTabs({
+        activeTab: state.tab,
+        onTabChange: (tab) => state.setTab(tab),
+      })}
     </div>
   `;
 }

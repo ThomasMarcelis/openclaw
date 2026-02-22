@@ -107,6 +107,34 @@ export const zh_TW: TranslationMap = {
       docsHint: "如需遠端存取，建議使用 Tailscale Serve。",
       docsLink: "查看文件 →",
     },
+    cards: {
+      cost: "費用",
+      skills: "技能",
+      recentSessions: "最近會話",
+    },
+    attention: {
+      title: "注意事項",
+    },
+    eventLog: {
+      title: "事件日誌",
+    },
+    logTail: {
+      title: "閘道日誌",
+    },
+    quickActions: {
+      newSession: "新建會話",
+      automation: "自動化",
+      refreshAll: "全部刷新",
+      terminal: "終端",
+    },
+    streamMode: {
+      active: "串流模式 — 數據已隱藏",
+      disable: "禁用",
+    },
+    palette: {
+      placeholder: "輸入指令…",
+      noResults: "無結果",
+    },
   },
   login: {
     subtitle: "閘道儀表板",

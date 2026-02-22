@@ -304,6 +304,21 @@ export class OpenClawApp extends LitElement {
 
   @state() updateAvailable: import("./types.js").UpdateAvailable | null = null;
 
+  // Overview dashboard state
+  @state() attentionItems: import("./types.js").AttentionItem[] = [];
+  @state() paletteOpen = false;
+  paletteQuery = "";
+  paletteActiveIndex = 0;
+  @state() streamMode = (() => {
+    try {
+      return localStorage.getItem("openclaw:stream-mode") === "true";
+    } catch {
+      return false;
+    }
+  })();
+  @state() overviewLogLines: string[] = [];
+  @state() overviewLogCursor = 0;
+
   @state() skillsLoading = false;
   @state() skillsReport: SkillStatusReport | null = null;
   @state() skillsError: string | null = null;

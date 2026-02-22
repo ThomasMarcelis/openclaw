@@ -108,6 +108,34 @@ export const en: TranslationMap = {
       docsHint: "For remote access, Tailscale Serve is recommended. ",
       docsLink: "Read the docs →",
     },
+    cards: {
+      cost: "Cost",
+      skills: "Skills",
+      recentSessions: "Recent Sessions",
+    },
+    attention: {
+      title: "Attention",
+    },
+    eventLog: {
+      title: "Event Log",
+    },
+    logTail: {
+      title: "Gateway Logs",
+    },
+    quickActions: {
+      newSession: "New Session",
+      automation: "Automation",
+      refreshAll: "Refresh All",
+      terminal: "Terminal",
+    },
+    streamMode: {
+      active: "Stream mode — values redacted",
+      disable: "Disable",
+    },
+    palette: {
+      placeholder: "Type a command…",
+      noResults: "No results",
+    },
   },
   login: {
     subtitle: "Gateway Dashboard",

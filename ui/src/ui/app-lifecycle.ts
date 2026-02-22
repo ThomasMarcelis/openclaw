@@ -38,6 +38,15 @@ type LifecycleHost = {
   topbarObserver: ResizeObserver | null;
 };
 
+function handleCmdK(host: LifecycleHost, e: KeyboardEvent) {
+  if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+    e.preventDefault();
+    (host as unknown as { paletteOpen: boolean }).paletteOpen = !(
+      host as unknown as { paletteOpen: boolean }
+    ).paletteOpen;
+  }
+}
+
 export function handleConnected(host: LifecycleHost) {
   host.basePath = inferBasePath();
   void loadControlUiBootstrapConfig(host);
@@ -46,6 +55,12 @@ export function handleConnected(host: LifecycleHost) {
   syncThemeWithSettings(host as unknown as Parameters<typeof syncThemeWithSettings>[0]);
   attachThemeListener(host as unknown as Parameters<typeof attachThemeListener>[0]);
   window.addEventListener("popstate", host.popStateHandler);
+  (host as unknown as { cmdKHandler: (e: KeyboardEvent) => void }).cmdKHandler = (e) =>
+    handleCmdK(host, e);
+  window.addEventListener(
+    "keydown",
+    (host as unknown as { cmdKHandler: (e: KeyboardEvent) => void }).cmdKHandler,
+  );
   connectGateway(host as unknown as Parameters<typeof connectGateway>[0]);
   startNodesPolling(host as unknown as Parameters<typeof startNodesPolling>[0]);
   if (host.tab === "logs") {
@@ -62,6 +77,10 @@ export function handleFirstUpdated(host: LifecycleHost) {
 
 export function handleDisconnected(host: LifecycleHost) {
   window.removeEventListener("popstate", host.popStateHandler);
+  const cmdK = (host as unknown as { cmdKHandler?: (e: KeyboardEvent) => void }).cmdKHandler;
+  if (cmdK) {
+    window.removeEventListener("keydown", cmdK);
+  }
   stopNodesPolling(host as unknown as Parameters<typeof stopNodesPolling>[0]);
   stopLogsPolling(host as unknown as Parameters<typeof stopLogsPolling>[0]);
   stopDebugPolling(host as unknown as Parameters<typeof stopDebugPolling>[0]);
