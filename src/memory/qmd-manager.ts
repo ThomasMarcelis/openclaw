@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import readline from "node:readline";
+import YAML from "yaml";
 import { resolveAgentWorkspaceDir } from "../agents/agent-scope.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { resolveStateDir } from "../config/paths.js";
@@ -300,6 +301,7 @@ export class QmdMemoryManager implements MemorySearchManager {
     // via the CLI. Prefer listing existing collections when supported, otherwise
     // fall back to best-effort idempotent `qmd collection add`.
     const existing = new Map<string, ListedCollection>();
+    let listedViaCli = false;
     try {
       const result = await this.runQmd(["collection", "list", "--json"], {
         timeoutMs: this.qmd.update.commandTimeoutMs,
@@ -308,8 +310,26 @@ export class QmdMemoryManager implements MemorySearchManager {
       for (const [name, details] of parsed) {
         existing.set(name, details);
       }
+      listedViaCli = true;
     } catch {
       // ignore; older qmd versions might not support list --json.
+    }
+
+    const needsYaml =
+      !listedViaCli || Array.from(existing.values()).some((collection) => !collection.path);
+    if (needsYaml) {
+      const yamlCollections = await this.listCollectionsFromYaml();
+      for (const [name, details] of yamlCollections) {
+        const current = existing.get(name);
+        if (!current) {
+          existing.set(name, details);
+          continue;
+        }
+        existing.set(name, {
+          path: current.path ?? details.path,
+          pattern: current.pattern ?? details.pattern,
+        });
+      }
     }
 
     await this.migrateLegacyUnscopedCollections(existing);
@@ -335,11 +355,69 @@ export class QmdMemoryManager implements MemorySearchManager {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         if (this.isCollectionAlreadyExistsError(message)) {
+          const migrated = await this.tryRepairExistingCollectionName({
+            collection,
+            message,
+            existing,
+          });
+          if (!migrated) {
+            const existingName = this.extractExistingCollectionNameFromAlreadyExistsError(message);
+            if (
+              existingName &&
+              existingName !== collection.name &&
+              !existing.has(collection.name)
+            ) {
+              log.warn(
+                `qmd collection add collision: wanted ${collection.name} but path/pattern already bound to ${existingName}`,
+              );
+            }
+          }
           continue;
         }
         log.warn(`qmd collection add failed for ${collection.name}: ${message}`);
       }
     }
+  }
+
+  private async listCollectionsFromYaml(): Promise<Map<string, ListedCollection>> {
+    const existing = new Map<string, ListedCollection>();
+    const indexPath = path.join(this.xdgConfigHome, "qmd", "index.yml");
+    try {
+      const raw = await fs.readFile(indexPath, "utf-8");
+      const parsed = YAML.parse(raw, { schema: "core" }) as unknown;
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return existing;
+      }
+      const collections = (parsed as { collections?: unknown }).collections;
+      if (!collections || typeof collections !== "object" || Array.isArray(collections)) {
+        return existing;
+      }
+      for (const [rawName, entry] of Object.entries(collections as Record<string, unknown>)) {
+        const name = rawName.trim();
+        if (!name) {
+          continue;
+        }
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+          existing.set(name, {});
+          continue;
+        }
+        const obj = entry as { path?: unknown; pattern?: unknown; mask?: unknown };
+        const listedPath = typeof obj.path === "string" ? obj.path : undefined;
+        const listedPattern =
+          typeof obj.pattern === "string"
+            ? obj.pattern
+            : typeof obj.mask === "string"
+              ? obj.mask
+              : undefined;
+        existing.set(name, { path: listedPath, pattern: listedPattern });
+      }
+    } catch (err) {
+      if (!isFileMissingError(err)) {
+        const message = err instanceof Error ? err.message : String(err);
+        log.warn(`qmd collection yaml read failed: ${message}`);
+      }
+    }
+    return existing;
   }
 
   private async migrateLegacyUnscopedCollections(
@@ -364,12 +442,22 @@ export class QmdMemoryManager implements MemorySearchManager {
         continue;
       }
       try {
-        await this.removeCollection(legacyName);
+        await this.renameCollection(legacyName, collection.name);
         existing.delete(legacyName);
+        existing.set(collection.name, listedLegacy);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        if (!this.isCollectionMissingError(message)) {
-          log.warn(`qmd collection remove failed for ${legacyName}: ${message}`);
+        log.warn(
+          `qmd legacy collection rename failed for ${legacyName} → ${collection.name}: ${message}`,
+        );
+        try {
+          await this.removeCollection(legacyName);
+          existing.delete(legacyName);
+        } catch (removeErr) {
+          const removeMessage = removeErr instanceof Error ? removeErr.message : String(removeErr);
+          if (!this.isCollectionMissingError(removeMessage)) {
+            log.warn(`qmd collection remove failed for ${legacyName}: ${removeMessage}`);
+          }
         }
       }
     }
@@ -417,6 +505,63 @@ export class QmdMemoryManager implements MemorySearchManager {
     return lower.includes("already exists") || lower.includes("exists");
   }
 
+  private extractExistingCollectionNameFromAlreadyExistsError(message: string): string | null {
+    const nameMatch = message.match(/Name:\s*([^\s(]+)\s*\(qmd:\/\//i);
+    if (nameMatch?.[1]) {
+      return nameMatch[1].trim();
+    }
+    const qmdMatch = message.match(/qmd:\/\/([A-Za-z0-9_-]+)\//i);
+    if (qmdMatch?.[1]) {
+      return qmdMatch[1].trim();
+    }
+    return null;
+  }
+
+  private async tryRepairExistingCollectionName(params: {
+    collection: ManagedCollection;
+    message: string;
+    existing: Map<string, ListedCollection>;
+  }): Promise<boolean> {
+    if (params.existing.has(params.collection.name)) {
+      return true;
+    }
+
+    const existingName = this.extractExistingCollectionNameFromAlreadyExistsError(params.message);
+    if (!existingName) {
+      return false;
+    }
+
+    if (existingName === params.collection.name) {
+      params.existing.set(params.collection.name, {
+        path: params.collection.path,
+        pattern: params.collection.pattern,
+      });
+      return true;
+    }
+
+    const legacyName = this.deriveLegacyCollectionName(params.collection.name);
+    if (!legacyName || legacyName !== existingName) {
+      return false;
+    }
+
+    try {
+      await this.renameCollection(existingName, params.collection.name);
+      const listed = params.existing.get(existingName) ?? {
+        path: params.collection.path,
+        pattern: params.collection.pattern,
+      };
+      params.existing.delete(existingName);
+      params.existing.set(params.collection.name, listed);
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log.warn(
+        `qmd collection rename failed for ${existingName} → ${params.collection.name}: ${message}`,
+      );
+      return false;
+    }
+  }
+
   private isCollectionMissingError(message: string): boolean {
     const lower = message.toLowerCase();
     return (
@@ -448,6 +593,12 @@ export class QmdMemoryManager implements MemorySearchManager {
 
   private async removeCollection(name: string): Promise<void> {
     await this.runQmd(["collection", "remove", name], {
+      timeoutMs: this.qmd.update.commandTimeoutMs,
+    });
+  }
+
+  private async renameCollection(oldName: string, newName: string): Promise<void> {
+    await this.runQmd(["collection", "rename", oldName, newName], {
       timeoutMs: this.qmd.update.commandTimeoutMs,
     });
   }
