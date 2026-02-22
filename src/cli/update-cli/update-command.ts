@@ -47,6 +47,7 @@ import {
   terminateStaleGatewayPids,
   waitForGatewayHealthyRestart,
 } from "../daemon-cli/restart-health.js";
+import { maybeRunForkUpdate } from "./fork-update.js";
 import { createUpdateProgress, printResult } from "./progress.js";
 import { prepareRestartScript, runRestartScript } from "./restart-helper.js";
 import {
@@ -692,6 +693,18 @@ export async function updateCommand(opts: UpdateCommandOptions): Promise<void> {
   }
 
   const root = await resolveUpdateRoot();
+
+  // Fork mode: if this install was built from a non-upstream repo, route `openclaw update`
+  // through our fork updater (rebase patch branch → build → pack → reinstall → restart).
+  const handled = await maybeRunForkUpdate({
+    installedRoot: root,
+    opts,
+    timeoutMs: timeoutMs ?? 20 * 60_000,
+  });
+  if (handled) {
+    return;
+  }
+
   const updateStatus = await checkUpdateStatus({
     root,
     timeoutMs: timeoutMs ?? 3500,
