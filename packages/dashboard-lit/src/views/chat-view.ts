@@ -467,8 +467,6 @@ export class AgentChat extends LitElement {
       this.pinnedMessages.clear();
       this.searchOpen = false;
       this.searchQuery = "";
-      this.expandedDuty = null;
-      this.outlineDraft = "";
     } catch (err) {
       this.errorText = err instanceof Error ? err.message : String(err);
     }
